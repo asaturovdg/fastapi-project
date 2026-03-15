@@ -1,8 +1,39 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 
 app = FastAPI()
 
+BALANCE = {}
+
 @app.get("/health")
 def health_check():
-    return Response(status_code=200)
+    return Response(content="OK", media_type="text/plain")
+
+@app.get("/balance")
+def get_balance(wallet_name: str | None = None):
+    # Если имя кошелька не указано - считаем общий баланс
+    if wallet_name is None:
+        return {"total_balance": sum(BALANCE.values())}
+    # Проверяем, существует ли запрашиваемый кошелек
+    if wallet_name not in BALANCE:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Wallet '{wallet_name}' not found"
+        )
+    # Возвращаем баланс конкретного кошелька
+    return {"wallet": wallet_name, "balance": BALANCE[wallet_name]}
+
+
+@app.post("/wallets/{name}")
+def receive_money(name: str, amount: int):
+    # Если кошелька с таким именем еще нет - создаем его с балансом 0
+    if name not in BALANCE:
+        BALANCE[name] = 0
+    # Добавляем сумму к балансу кошелька
+    BALANCE[name] += amount
+    # Возвращаем информацию об операции
+    return {
+        "message": "Added {amount} to {name}",
+        "wallet": name,
+        "new_balance": BALANCE[name]
+    }
