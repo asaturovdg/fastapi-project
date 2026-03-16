@@ -1,13 +1,15 @@
+from decimal import Decimal
+
 from pydantic import BaseModel, Field, field_validator
 
 
 class OperationRequest(BaseModel):
     wallet_name: str = Field(..., max_length=127)
-    amount: float
+    amount: Decimal
     description: str | None = Field(None, max_length=255)
 
     @field_validator('amount')
-    def amount_must_be_positive(cls, v: float) -> float:
+    def amount_must_be_positive(cls, v: Decimal) -> Decimal:
         # Проверяем что значение больше нуля
         if v <= 0:
             raise ValueError("Amount must be positive")
